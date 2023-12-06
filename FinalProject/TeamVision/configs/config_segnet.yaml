@@ -1,0 +1,22 @@
+training:
+  batch_size: 16
+  epochs: 100
+  learning_rate: 0.001
+  reg: 0.0005
+  momentum: 0.9
+
+model:
+  name: SegNet
+  save_best: True
+
+dataset:
+  name: VOC2012
+  path: data/VOC2012
+  train_data: ImageSets/Segmentation/train.txt
+  img_dir: JPEGImages
+  mask_dir: SegmentationClass
+  checkpoint: checkpoints/segnet.pth
+  out_dir: tests/predictions
+
+loss:
+  loss_type: CE # CE or Focal
