@@ -1,1 +1,16 @@
-VOC2012 dataset located in this dir
+voc is a symbolic link (symlink) to the dir location of VOC2012 dataset.
+
+How to create?
+Example:
+If 'D:\_MURUGAN_\OMSCS\CS7643\GroupProject\DataSet\voc\VOC2012' is your dataset
+
+In Windows 10 (need Admin privileges. Open shell with admin privileges):
+
+> New-Item -ItemType SymbolicLink -Path D:\_MURUGAN_\OMSCS\CS7643\GroupProject\OMS_CS7643_DL_Project\FinalProject\TeamVision\data\voc  -Target D:\_MURUGAN_\OMSCS\CS7643\GroupProject\DataSet\voc
+
+In MacBook / Linux:
+
+$ln -s <path where data is located> <symlink>
+
+
+
