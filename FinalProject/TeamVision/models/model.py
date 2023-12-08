@@ -8,11 +8,25 @@ Notes:
 
 """
 
+
+from __future__ import print_function
+from Encoder import Encoder
+from Decoder import Decoder
+from collections import OrderedDict
+import torch
+import torch.nn as nn
+import torchvision.models as models
+import pprint
+
+F = nn.functional
+DEBUG = False
+
 import torch
 import torch.nn as nn
 import torchvision.models as models
 
 DEBUG = False
+
 
 class SegNet(nn.Module):
     def __init__(self, input_channels, output_channels):
@@ -25,11 +39,11 @@ class SegNet(nn.Module):
 
         # VGG16
         # initialize the training process from weights trained for classification on large datasets
-        self.vgg16 = models.vgg16(weights='DEFAULT')
-        self.init_vgg_weigts()
+        self.vgg16_pretrained = models.vgg16(pretrained=True)
 
-        # Encoder layers
+        # Encoder layers and load weights and parameters from vgg16 pretrained model
         self.encoder = self.build_encoder()
+        self.encoder.load_state_dict(self.vgg16_pretrained.state_dict(), strict=False)
 
         # Decoder layers
         self.decoder = self.build_decoder()
@@ -37,53 +51,79 @@ class SegNet(nn.Module):
     def build_encoder(self):
         encoder = nn.Sequential(
             self.build_encoder_layer(self.input_channels, 64),
+            self.build_encoder_layer(64, 64),
+            nn.MaxPool2d(kernel_size=2, stride=2, return_indices=True),
+
             self.build_encoder_layer(64, 128),
+            self.build_encoder_layer(128, 128),
+            nn.MaxPool2d(kernel_size=2, stride=2, return_indices=True),
+
             self.build_encoder_layer(128, 256),
+            self.build_encoder_layer(256, 256),
+            self.build_encoder_layer(256, 256),
+            nn.MaxPool2d(kernel_size=2, stride=2, return_indices=True),
+
             self.build_encoder_layer(256, 512),
             self.build_encoder_layer(512, 512),
+            self.build_encoder_layer(512, 512),
+            nn.MaxPool2d(kernel_size=2, stride=2, return_indices=True),
+
+            self.build_encoder_layer(512, 512),
+            self.build_encoder_layer(512, 512),
+            self.build_encoder_layer(512, 512),
+            nn.MaxPool2d(kernel_size=2, stride=2, return_indices=True)
+
         )
         return encoder
 
     #
     # encoder_layer:
-    #   Conv -> BatchNorm -> ReLU -> Conv -> BatchNorm -> ReLU -> MaxPool
+    #   Conv -> BatchNorm -> ReLU
     #
     def build_encoder_layer(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
         return nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size, stride, padding),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2, return_indices=True)
+            nn.ReLU()
         )
 
     def build_decoder(self):
         decoder = nn.Sequential(
+            nn.MaxUnpool2d(kernel_size=2, stride=2),
             self.build_decoder_layer(512, 512),
             self.build_decoder_layer(512, 512),
+            self.build_decoder_layer(512, 512),
+
+            nn.MaxUnpool2d(kernel_size=2, stride=2),
             self.build_decoder_layer(512, 512),
             self.build_decoder_layer(512, 512),
             self.build_decoder_layer(512, 256),
+
+            nn.MaxUnpool2d(kernel_size=2, stride=2),
+            self.build_decoder_layer(256, 256),
+            self.build_decoder_layer(256, 256),
             self.build_decoder_layer(256, 128),
+
+            nn.MaxUnpool2d(kernel_size=2, stride=2),
+            self.build_decoder_layer(128, 128),
             self.build_decoder_layer(128, 64),
+
+            nn.MaxUnpool2d(kernel_size=2, stride=2),
+            self.build_decoder_layer(64, 64),
+            self.build_decoder_layer(64, self.output_channels)
+
         )
         return decoder
 
     #
     # decoder_layer:
-    #   MaxUnpool -> Conv -> BatchNorm -> ReLU -> Conv -> BatchNorm -> ReLU
+    #   Conv -> BatchNorm -> ReLU
     #
     def build_decoder_layer(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
         return nn.Sequential(
-            nn.MaxUnpool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels, out_channels, kernel_size, padding),
+            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size, padding),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(),
+            nn.ReLU()
         )
 
     def forward(self, input_img):
@@ -92,19 +132,19 @@ class SegNet(nn.Module):
         x = input_img
         for layer in self.encoder:
             if isinstance(layer, nn.MaxPool2d):
-                x, idx = layer(x)
                 encoded.append(x)
+                x, idx = layer(x)
                 indices.append(idx)
             else:
                 x = layer(x)
-
         # Decoder
         for layer in self.decoder:
+
             if isinstance(layer, nn.MaxUnpool2d):
-                x = layer(x, indices.pop(), output_size=encoded.pop().size())
+                out_size = encoded.pop().size()
+                x = layer(x, indices.pop(), output_size=out_size)
             else:
                 x = layer(x)
-
         x_softmax = nn.functional.softmax(x, dim=1)
 
         if DEBUG:
@@ -113,12 +153,14 @@ class SegNet(nn.Module):
 
         return x, x_softmax
 
+    """
+    def init_vgg_weights(self):
+        # print(self.vgg16_pretrained)
 
-    def init_vgg_weigts(self):
-        assert self.encoder_conv_00[0].weight.size() == self.vgg16.features[0].weight.size()
-        self.encoder_conv_00[0].weight.data = self.vgg16.features[0].weight.data
-        assert self.encoder_conv_00[0].bias.size() == self.vgg16.features[0].bias.size()
-        self.encoder_conv_00[0].bias.data = self.vgg16.features[0].bias.data
+        assert self.encoder_conv_00.weight.size() == self.vgg16.features[0].weight.size()
+        self.encoder_conv_00.weight.data = self.vgg16.features[0].weight.data
+        assert self.encoder_conv_00.bias.size() == self.vgg16.features[0].bias.size()
+        self.encoder_conv_00.bias.data = self.vgg16.features[0].bias.data
 
         assert self.encoder_conv_01[0].weight.size() == self.vgg16.features[2].weight.size()
         self.encoder_conv_01[0].weight.data = self.vgg16.features[2].weight.data
@@ -179,4 +221,4 @@ class SegNet(nn.Module):
         self.encoder_conv_42[0].weight.data = self.vgg16.features[28].weight.data
         assert self.encoder_conv_42[0].bias.size() == self.vgg16.features[28].bias.size()
         self.encoder_conv_42[0].bias.data = self.vgg16.features[28].bias.data
-
+    """
