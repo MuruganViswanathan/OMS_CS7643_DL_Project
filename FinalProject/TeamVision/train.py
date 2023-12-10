@@ -70,7 +70,7 @@ def train(model, train_dataloader, criterion, optimizer, checkpoint_file):
             prev_loss = loss_f
             torch.save(model.state_dict(), checkpoint_file)
 
-        print("Epoch #{}\tLoss: {:.8f}\t Time: {:.2f}s".format(epoch + 1, loss_f, delta))
+        print("Epoch #{}/#{}\tLoss: {:.8f}\t Time: {:.2f}s".format(epoch + 1, epochs, loss_f, delta))
 
 
 if __name__ == "__main__":
