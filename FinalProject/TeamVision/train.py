@@ -77,12 +77,14 @@ if __name__ == "__main__":
     CUDA = args.gpu is not None
     GPU_ID = args.gpu
 
+    print("Loading PascalVOCDataset...")
     train_dataset = PascalVOCDataset(
         list_file=train_data_file,
         img_dir=img_dir,
         mask_dir=mask_dir
     )
 
+    print("DataLoader...")
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=batch_size,
@@ -91,23 +93,35 @@ if __name__ == "__main__":
     )
 
     if CUDA:
+        print("CUDA True...")
+        print("Loading model SegNet...")
         model = SegNet(
             input_channels=NUM_INPUT_CHANNELS,
             output_channels=NUM_OUTPUT_CHANNELS
         ).cuda(GPU_ID)
+
         class_weights = 1.0 / train_dataset.get_class_probability().cuda(GPU_ID)
         criterion = torch.nn.CrossEntropyLoss(weight=class_weights).cuda(GPU_ID)
+
     else:
+        print("CUDA False...")
+        print("Loading model SegNet...")
         model = SegNet(
             input_channels=NUM_INPUT_CHANNELS,
             output_channels=NUM_OUTPUT_CHANNELS
         )
+
         class_weights = 1.0 / train_dataset.get_class_probability()
         criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
 
     if os.path.exists(checkpoint_file):
+        print("Loading checkpoint_file...")
         model.load_state_dict(torch.load(checkpoint_file))
+    else:
+        print("checkpoint_file not found...")
 
+    print("optimizer...")
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+    print("train model...")
     train(model, train_dataloader, criterion, optimizer, checkpoint_file)
