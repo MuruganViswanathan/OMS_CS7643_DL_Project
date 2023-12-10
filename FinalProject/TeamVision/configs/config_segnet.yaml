@@ -8,15 +8,17 @@ training:
 model:
   name: SegNet
   save_best: True
+  checkpoint: checkpoints/segnet.pth
+  out_dir: tests/predictions
 
 dataset:
   name: VOC2012
-  path: data/VOC2012
+  path: data/voc/VOC2012
   train_data: ImageSets/Segmentation/train.txt
+  validation_data: ImageSets/Segmentation/val.txt
   img_dir: JPEGImages
   mask_dir: SegmentationClass
-  checkpoint: checkpoints/segnet.pth
-  out_dir: tests/predictions
+
 
 loss:
   loss_type: CE # CE or Focal

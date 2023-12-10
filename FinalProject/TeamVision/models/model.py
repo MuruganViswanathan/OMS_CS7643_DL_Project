@@ -8,18 +8,9 @@ Notes:
 
 """
 
-
 from __future__ import print_function
-from Encoder import Encoder
-from Decoder import Decoder
 from collections import OrderedDict
-import torch
-import torch.nn as nn
-import torchvision.models as models
 import pprint
-
-F = nn.functional
-DEBUG = False
 
 import torch
 import torch.nn as nn
@@ -39,7 +30,8 @@ class SegNet(nn.Module):
 
         # VGG16
         # initialize the training process from weights trained for classification on large datasets
-        self.vgg16_pretrained = models.vgg16(pretrained=True)
+        #self.vgg16_pretrained = models.vgg16(pretrained=True)
+        self.vgg16_pretrained = models.vgg16(weights = 'DEFAULT')
 
         # Encoder layers and load weights and parameters from vgg16 pretrained model
         self.encoder = self.build_encoder()
@@ -152,73 +144,3 @@ class SegNet(nn.Module):
                 print(f"dim_{i}: {enc.size()} -> {dec[0].weight.size(0)} channels")
 
         return x, x_softmax
-
-    """
-    def init_vgg_weights(self):
-        # print(self.vgg16_pretrained)
-
-        assert self.encoder_conv_00.weight.size() == self.vgg16.features[0].weight.size()
-        self.encoder_conv_00.weight.data = self.vgg16.features[0].weight.data
-        assert self.encoder_conv_00.bias.size() == self.vgg16.features[0].bias.size()
-        self.encoder_conv_00.bias.data = self.vgg16.features[0].bias.data
-
-        assert self.encoder_conv_01[0].weight.size() == self.vgg16.features[2].weight.size()
-        self.encoder_conv_01[0].weight.data = self.vgg16.features[2].weight.data
-        assert self.encoder_conv_01[0].bias.size() == self.vgg16.features[2].bias.size()
-        self.encoder_conv_01[0].bias.data = self.vgg16.features[2].bias.data
-
-        assert self.encoder_conv_10[0].weight.size() == self.vgg16.features[5].weight.size()
-        self.encoder_conv_10[0].weight.data = self.vgg16.features[5].weight.data
-        assert self.encoder_conv_10[0].bias.size() == self.vgg16.features[5].bias.size()
-        self.encoder_conv_10[0].bias.data = self.vgg16.features[5].bias.data
-
-        assert self.encoder_conv_11[0].weight.size() == self.vgg16.features[7].weight.size()
-        self.encoder_conv_11[0].weight.data = self.vgg16.features[7].weight.data
-        assert self.encoder_conv_11[0].bias.size() == self.vgg16.features[7].bias.size()
-        self.encoder_conv_11[0].bias.data = self.vgg16.features[7].bias.data
-
-        assert self.encoder_conv_20[0].weight.size() == self.vgg16.features[10].weight.size()
-        self.encoder_conv_20[0].weight.data = self.vgg16.features[10].weight.data
-        assert self.encoder_conv_20[0].bias.size() == self.vgg16.features[10].bias.size()
-        self.encoder_conv_20[0].bias.data = self.vgg16.features[10].bias.data
-
-        assert self.encoder_conv_21[0].weight.size() == self.vgg16.features[12].weight.size()
-        self.encoder_conv_21[0].weight.data = self.vgg16.features[12].weight.data
-        assert self.encoder_conv_21[0].bias.size() == self.vgg16.features[12].bias.size()
-        self.encoder_conv_21[0].bias.data = self.vgg16.features[12].bias.data
-
-        assert self.encoder_conv_22[0].weight.size() == self.vgg16.features[14].weight.size()
-        self.encoder_conv_22[0].weight.data = self.vgg16.features[14].weight.data
-        assert self.encoder_conv_22[0].bias.size() == self.vgg16.features[14].bias.size()
-        self.encoder_conv_22[0].bias.data = self.vgg16.features[14].bias.data
-
-        assert self.encoder_conv_30[0].weight.size() == self.vgg16.features[17].weight.size()
-        self.encoder_conv_30[0].weight.data = self.vgg16.features[17].weight.data
-        assert self.encoder_conv_30[0].bias.size() == self.vgg16.features[17].bias.size()
-        self.encoder_conv_30[0].bias.data = self.vgg16.features[17].bias.data
-
-        assert self.encoder_conv_31[0].weight.size() == self.vgg16.features[19].weight.size()
-        self.encoder_conv_31[0].weight.data = self.vgg16.features[19].weight.data
-        assert self.encoder_conv_31[0].bias.size() == self.vgg16.features[19].bias.size()
-        self.encoder_conv_31[0].bias.data = self.vgg16.features[19].bias.data
-
-        assert self.encoder_conv_32[0].weight.size() == self.vgg16.features[21].weight.size()
-        self.encoder_conv_32[0].weight.data = self.vgg16.features[21].weight.data
-        assert self.encoder_conv_32[0].bias.size() == self.vgg16.features[21].bias.size()
-        self.encoder_conv_32[0].bias.data = self.vgg16.features[21].bias.data
-
-        assert self.encoder_conv_40[0].weight.size() == self.vgg16.features[24].weight.size()
-        self.encoder_conv_40[0].weight.data = self.vgg16.features[24].weight.data
-        assert self.encoder_conv_40[0].bias.size() == self.vgg16.features[24].bias.size()
-        self.encoder_conv_40[0].bias.data = self.vgg16.features[24].bias.data
-
-        assert self.encoder_conv_41[0].weight.size() == self.vgg16.features[26].weight.size()
-        self.encoder_conv_41[0].weight.data = self.vgg16.features[26].weight.data
-        assert self.encoder_conv_41[0].bias.size() == self.vgg16.features[26].bias.size()
-        self.encoder_conv_41[0].bias.data = self.vgg16.features[26].bias.data
-
-        assert self.encoder_conv_42[0].weight.size() == self.vgg16.features[28].weight.size()
-        self.encoder_conv_42[0].weight.data = self.vgg16.features[28].weight.data
-        assert self.encoder_conv_42[0].bias.size() == self.vgg16.features[28].bias.size()
-        self.encoder_conv_42[0].bias.data = self.vgg16.features[28].bias.data
-    """
