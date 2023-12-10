@@ -1,10 +1,3 @@
-"""
-Train a SegNet model
-
-Usage:
-python train.py --gpu 0
-"""
-
 import os
 import time
 import torch
@@ -13,6 +6,10 @@ import argparse
 from data.dataset import PascalVOCDataset, NUM_CLASSES
 from models.model import SegNet
 from main import get_model_params, get_training_params, get_data_params
+from torch.nn import CrossEntropyLoss
+from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
+from torchvision import transforms
 
 # Constants
 NUM_INPUT_CHANNELS = 3
@@ -28,7 +25,7 @@ parser.add_argument('--gpu', type=int)
 args = parser.parse_args()
 
 
-def train(model, train_dataloader, criterion, optimizer, checkpoint_file):
+def train(model, train_dataloader, criterion, optimizer, scheduler, checkpoint_file):
     is_better = True
     prev_loss = float('inf')
 
@@ -53,7 +50,7 @@ def train(model, train_dataloader, criterion, optimizer, checkpoint_file):
                 input_var = input_var.cuda(GPU_ID)
                 target_var = target_var.cuda(GPU_ID)
 
-            predicted_tensor, softmaxed_tensor = model(input_var)
+            predicted_tensor, _ = model(input_var)
 
             optimizer.zero_grad()
             loss = criterion(predicted_tensor, target_var)
@@ -61,14 +58,24 @@ def train(model, train_dataloader, criterion, optimizer, checkpoint_file):
             optimizer.step()
 
             loss_f += loss.item()
-            prediction_f = softmaxed_tensor.float()
 
+        scheduler.step()
         delta = time.time() - t_start
         is_better = loss_f < prev_loss
 
         if is_better:
             prev_loss = loss_f
-            torch.save(model.state_dict(), checkpoint_file)
+            checkpoint_info = {
+                'epoch': epoch + 1,
+                'loss': loss_f,
+            }
+            # Save the model's state dictionary with the key 'model_state_dict'
+            torch.save({
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'checkpoint_info': checkpoint_info
+            }, checkpoint_file)
 
         print("Epoch #{}/#{}\tLoss: {:.8f}\t Time: {:.2f}s".format(epoch + 1, epochs, loss_f, delta))
 
@@ -81,7 +88,10 @@ if __name__ == "__main__":
     train_dataset = PascalVOCDataset(
         list_file=train_data_file,
         img_dir=img_dir,
-        mask_dir=mask_dir
+        mask_dir=mask_dir,
+        transform=transforms.Compose([
+            transforms.ToTensor(),
+        ])
     )
 
     print("DataLoader...")
@@ -101,7 +111,7 @@ if __name__ == "__main__":
         ).cuda(GPU_ID)
 
         class_weights = 1.0 / train_dataset.get_class_probability().cuda(GPU_ID)
-        criterion = torch.nn.CrossEntropyLoss(weight=class_weights).cuda(GPU_ID)
+        criterion = CrossEntropyLoss(weight=class_weights).cuda(GPU_ID)
 
     else:
         print("CUDA False...")
@@ -112,16 +122,40 @@ if __name__ == "__main__":
         )
 
         class_weights = 1.0 / train_dataset.get_class_probability()
-        criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
+        criterion = CrossEntropyLoss(weight=class_weights)
+
+    print("optimizer...")
+    optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=regularization)
+    scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
+
 
     if os.path.exists(checkpoint_file):
         print("Loading checkpoint_file...")
-        model.load_state_dict(torch.load(checkpoint_file))
+        checkpoint = torch.load(checkpoint_file)
+
+        # Check if 'model_state_dict' key is present, otherwise assume direct state_dict
+        if 'model_state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['model_state_dict'])
+        else:
+            model.load_state_dict(checkpoint)
+
+        # Load optimizer state_dict if available
+        if 'optimizer_state_dict' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        else:
+            print("Optimizer state_dict not found in the checkpoint file.")
+
+        # Load scheduler state_dict if available
+        if 'scheduler_state_dict' in checkpoint:
+            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        else:
+            print("Scheduler state_dict not found in the checkpoint file.")
+
     else:
         print("checkpoint_file not found...")
 
-    print("optimizer...")
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    # optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=regularization)
+    # scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
 
     print("train model...")
-    train(model, train_dataloader, criterion, optimizer, checkpoint_file)
+    train(model, train_dataloader, criterion, optimizer, scheduler, checkpoint_file)
