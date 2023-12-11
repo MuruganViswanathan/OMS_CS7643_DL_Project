@@ -77,7 +77,7 @@ def train(model, train_dataloader, criterion, optimizer, scheduler, checkpoint_f
                 'checkpoint_info': checkpoint_info
             }, checkpoint_file)
 
-        print("Epoch #{}/#{}\tLoss: {:.8f}\t Time: {:.2f}s".format(epoch + 1, epochs, loss_f, delta))
+        print("Epoch #{}/{}\tLoss: {:.8f}\t Time: {:.2f}s".format(epoch + 1, epochs, loss_f, delta))
 
 
 if __name__ == "__main__":
