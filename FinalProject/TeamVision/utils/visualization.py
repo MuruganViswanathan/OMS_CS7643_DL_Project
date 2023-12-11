@@ -22,3 +22,11 @@ def visualize_predictions(input_image, predicted_mask, target_mask, out_dir, idx
     plt.savefig(save_path)
     plt.close(fig)
     return save_path
+
+def calculate_miou(conf_matrix):
+    intersection = np.diag(conf_matrix)
+    union = np.sum(conf_matrix, axis=0) + np.sum(conf_matrix, axis=1) - np.diag(conf_matrix)
+    iou = intersection / union
+    mIoU = np.nanmean(iou)
+    return mIoU
+

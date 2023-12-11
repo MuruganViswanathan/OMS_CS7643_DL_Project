@@ -28,12 +28,13 @@ args = parser.parse_args()
 def train(model, train_dataloader, criterion, optimizer, scheduler, checkpoint_file):
     is_better = True
     prev_loss = float('inf')
+    best_loss = float('inf')
 
     model.train()
 
     for epoch in range(epochs):
-        loss_f = 0
-        t_start = time.time()
+        curr_loss = 0
+        start_time = time.time()
 
         for batch in train_dataloader:
             input_tensor = batch['image']
@@ -57,19 +58,34 @@ def train(model, train_dataloader, criterion, optimizer, scheduler, checkpoint_f
             loss.backward()
             optimizer.step()
 
-            loss_f += loss.item()
+            curr_loss += loss.item()
 
         scheduler.step()
-        delta = time.time() - t_start
-        is_better = loss_f < prev_loss
+        delta = time.time() - start_time
+        # is_better = curr_loss < prev_loss
+        is_best = curr_loss < best_loss
 
-        if is_better:
-            prev_loss = loss_f
+        # if is_better:
+        #     prev_loss = curr_loss
+        #     checkpoint_info = {
+        #         'epoch': epoch + 1,
+        #         'loss': curr_loss,
+        #     }
+        #     # Save the model's state dictionary with the key 'model_state_dict'
+        #     torch.save({
+        #         'model_state_dict': model.state_dict(),
+        #         'optimizer_state_dict': optimizer.state_dict(),
+        #         'scheduler_state_dict': scheduler.state_dict(),
+        #         'checkpoint_info': checkpoint_info
+        #     }, checkpoint_file)
+
+        if is_best:
+            best_loss = curr_loss
             checkpoint_info = {
                 'epoch': epoch + 1,
-                'loss': loss_f,
+                'loss': curr_loss,
             }
-            # Save the model's state dictionary with the key 'model_state_dict'
+            # Save the best model
             torch.save({
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
@@ -77,7 +93,8 @@ def train(model, train_dataloader, criterion, optimizer, scheduler, checkpoint_f
                 'checkpoint_info': checkpoint_info
             }, checkpoint_file)
 
-        print("Epoch #{}/{}\tLoss: {:.8f}\t Time: {:.2f}s".format(epoch + 1, epochs, loss_f, delta))
+
+        print("Epoch #{}/{}\tLoss: {:.8f}\t Time: {:.2f}s".format(epoch + 1, epochs, curr_loss, delta))
 
 
 if __name__ == "__main__":

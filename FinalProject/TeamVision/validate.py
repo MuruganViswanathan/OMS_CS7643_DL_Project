@@ -83,10 +83,10 @@ def main():
     # CUDA = args.gpu is not None
     # GPU_ID = args.gpu
 
-    print("Loading PascalVOCDataset...")
+    print("Loading validation PascalVOCDataset...")
     val_dataset = PascalVOCDataset(list_file=val_data_file, img_dir=img_dir, mask_dir=mask_dir)
 
-    print("DataLoader...")
+    print("Validation DataLoader...")
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
     print("prepare SegNet model ...")
