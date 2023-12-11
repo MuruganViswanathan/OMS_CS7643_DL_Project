@@ -6,6 +6,7 @@ from torchvision.transforms import ToPILImage
 from data.dataset import PascalVOCDataset, NUM_CLASSES
 from models.model import SegNet
 from main import get_model_params, get_training_params, get_data_params
+from utils.visualization import visualize_predictions
 import torch
 
 plt.switch_backend('agg')
@@ -26,22 +27,22 @@ parser.add_argument('--model_path')
 parser.add_argument('--gpu', type=int)
 args = parser.parse_args()
 
-# Function to visualize predictions
-def visualize_predictions(input_image, predicted_mask, target_mask, out_dir, idx, batch_idx):
-
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-
-    axes[0].imshow(input_image.permute(1, 2, 0))
-    axes[0].set_title('Input Image')
-
-    axes[1].imshow(predicted_mask, cmap='jet')
-    axes[1].set_title('Predicted Mask')
-
-    axes[2].imshow(target_mask, cmap='jet')
-    axes[2].set_title('Ground Truth')
-
-    plt.savefig(os.path.join(out_dir, f"prediction_{batch_idx}_{idx}.png"))
-    plt.close(fig)
+# # Function to visualize predictions
+# def visualize_predictions(input_image, predicted_mask, target_mask, out_dir, idx, batch_idx):
+#
+#     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+#
+#     axes[0].imshow(input_image.permute(1, 2, 0))
+#     axes[0].set_title('Input Image')
+#
+#     axes[1].imshow(predicted_mask, cmap='jet')
+#     axes[1].set_title('Predicted Mask')
+#
+#     axes[2].imshow(target_mask, cmap='jet')
+#     axes[2].set_title('Ground Truth')
+#
+#     plt.savefig(os.path.join(out_dir, f"prediction_{batch_idx}_{idx}.png"))
+#     plt.close(fig)
 
 
 def validate(model, val_dataloader, criterion, out_dir):
@@ -65,7 +66,9 @@ def validate(model, val_dataloader, criterion, out_dir):
             predicted_mask_np = predicted_mask.argmax(dim=0).cpu().numpy()
             target_mask_np = target_mask.cpu().numpy()
 
-            visualize_predictions(input_image, predicted_mask_np, target_mask_np, out_dir, idx, batch_idx)
+            #visualize_predictions(input_image, predicted_mask_np, target_mask_np, out_dir, idx, batch_idx)
+            save_path = visualize_predictions(input_image, predicted_mask_np, target_mask_np, out_dir, idx, batch_idx)
+            # print(f"Visualization saved at: {save_path}")
 
 
 def main():
