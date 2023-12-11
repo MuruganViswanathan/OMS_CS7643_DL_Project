@@ -102,7 +102,7 @@ def train_and_validate(model, train_dataloader, val_dataloader, criterion, optim
         train_losses.append(curr_loss)
         scheduler.step()
         delta = time.time() - start_time
-        is_better = curr_loss < prev_loss
+        # is_better = curr_loss < prev_loss
         is_best = curr_loss < best_loss
 
         print("Epoch #{}/{}\tLoss: {:.8f}\t Time: {:.2f}s".format(epoch + 1, epochs, curr_loss, delta))

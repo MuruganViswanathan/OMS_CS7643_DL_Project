@@ -171,8 +171,5 @@ if __name__ == "__main__":
     else:
         print("checkpoint_file not found...")
 
-    # optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=regularization)
-    # scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
-
     print("train model...")
     train(model, train_dataloader, criterion, optimizer, scheduler, checkpoint_file)

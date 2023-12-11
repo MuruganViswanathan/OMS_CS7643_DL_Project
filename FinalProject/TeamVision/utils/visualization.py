@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 from torchvision.transforms import ToPILImage
+import numpy as np
 
 plt.switch_backend('agg')
 plt.axis('off')

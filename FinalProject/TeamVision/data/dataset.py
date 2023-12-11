@@ -99,31 +99,3 @@ class PascalVOCDataset(Dataset):
         imx_t[imx_t == 255] = len(CLASSIFICATION)
 
         return imx_t
-
-
-# if __name__ == "__main__":
-#     data_root = os.path.join("data", "VOCdevkit", "VOC2007")
-#     list_file_path = os.path.join(data_root, "ImageSets", "Segmentation", "train.txt")
-#     img_dir = os.path.join(data_root, "JPEGImages")
-#     mask_dir = os.path.join(data_root, "SegmentationObject")
-#
-#     objects_dataset = PascalVOCDataset(list_file=list_file_path,
-#                                        img_dir=img_dir,
-#                                        mask_dir=mask_dir)
-#
-#     print(objects_dataset.get_class_probability())
-#
-#     sample = objects_dataset[0]
-#     image, mask = sample['image'], sample['mask']
-#
-#     image.transpose_(0, 2)
-#
-#     fig = plt.figure()
-#
-#     a = fig.add_subplot(1, 2, 1)
-#     plt.imshow(image)
-#
-#     a = fig.add_subplot(1, 2, 2)
-#     plt.imshow(mask)
-#
-#     plt.show()
