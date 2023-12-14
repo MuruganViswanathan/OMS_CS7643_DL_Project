@@ -1,23 +1,22 @@
 """
-Pytorch implementation of SegNet (https://arxiv.org/pdf/1511.00561.pdf)
+References:
+    1) Dataset: https://www.kaggle.com/datasets/huanghanchina/pascal-voc-2012/
+    2) SegNet: https://arxiv.org/pdf/1511.00561.pdf
+    3) Referencing various Semantic Segmentation models implementations:
+        https://github.com/Tramac/awesome-semantic-segmentation-pytorch
+        https://github.com/say4n/pytorch-segnet
+    4) Original paper: https://doi.org/10.48550/arXiv.1511.00561
 
-Notes:
-    #1 Fig.3.The encoder network consists of 13 convolutional layers which correspond to the first 13 convolutional
-    layers in the VGG16 network[1] designed for object classification.
-    We can therefore initialize the training process from weights trained for classification on large datasets [41].
-
+Authors (listed alphabetically):
+    Murugan Viswanathan
+    Paresh Upadhyay
 """
-
-from __future__ import print_function
-from collections import OrderedDict
-import pprint
 
 import torch
 import torch.nn as nn
 import torchvision.models as models
 
 DEBUG = False
-
 
 class SegNet(nn.Module):
     def __init__(self, input_channels, output_channels):
@@ -30,7 +29,6 @@ class SegNet(nn.Module):
 
         # VGG16
         # initialize the training process from weights trained for classification on large datasets
-        #self.vgg16_pretrained = models.vgg16(pretrained=True)
         self.vgg16_pretrained = models.vgg16(weights = 'DEFAULT')
 
         # Encoder layers and load weights and parameters from vgg16 pretrained model
@@ -144,3 +142,4 @@ class SegNet(nn.Module):
                 print(f"dim_{i}: {enc.size()} -> {dec[0].weight.size(0)} channels")
 
         return x, x_softmax
+
